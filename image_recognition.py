@@ -138,7 +138,7 @@ if __name__ == "__main__":
     addresslables = 'train-labels-idx1-ubyte.gz'
     numimages = 60000
     sizeimages = 28
-
+#aadfasfafsaf
     training_data = np.asarray(loadData(addresstraining, numimages, sizeimages))
 
     hl1 = convolve(3, 8, 1)
