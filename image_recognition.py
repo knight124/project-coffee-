@@ -19,9 +19,51 @@ def loadData(address, numimages, sizeImages):
 
     return images
 
+class NN:
+    def __init__(self,num_inputs):
+        self. numberofinputs = num_inputs
+        self.num_hidden = 20
+        self.num_hidden1 = 10
+        self.num_out = 10
+
+        self.weights1 = np.random.rand (self.numberofinputs,self.num_hidden)
+        self.weights2 = np.random.rand(self.num_hidden, self.num_hidden1)
+        self.weights3 = np.random.rand(self.num_hidden1,self.num_out)
+
+    def sig (self,x):
+        return 1/(1+np.exp(-x))
+
+    def divsig (self, x):
+        return x * (1-x)
+
+    def forward (self, x):
+        self.intermidiat  = np.dot(x,self.weights1)
+        self.intermidiat2 = self.sig(self.intermidiat)
+        self.intermidiat3 = np.dot(self.intermidiat2, self.weights2)
+        self.intermidiat4 = self.sig(self.intermidiat3)
+        self.intermidiat5 = np.dot(self.intermidiat4, self.weights3)
+        out = self.sig(self.intermidiat5)
+
+    def backward (self, x, y, o):
+        self.output_error = y-o
+        self.output_delta = self.o_error*self.divsig(o)
+
+        self.inermidiate4_error = self.output_delta.dot(self.weights3)
+        self.intermidiat4_delta = self.inermidiate4_error*self.divsig(self.intermidiat4)
+
+        self.intermidiat2.error = self.intermidiat4_delta(self.weights2.T)
+        self.intermidiat2_delta = self.inermidiate2_error*self.divsig(self.intermidiat4)
+
+        self.weights1 += x.T.dot(self.intermidiat2_delta)
+        self.weights2 += self.intermidiat4.T.dot(self.intermidiat4_delta)
+        self.weights3 += self.intermidiat2.T.dot(self.intermidiat2_delta)
+
+
+
+
 
 class convolve:
-
+    #TODO add back propagation to the convelution layer
     def __init__(self, size, num_filters, isinput):
         self.num_filters = num_filters
         self.size = size
@@ -86,6 +128,10 @@ class pool:
 
         return out
 
+def train(X, Y):
+    print(X)
+    #TODO: add a training mechanism
+
 
 if __name__ == "__main__":
     addresstraining = 'train-images-idx3-ubyte.gz'
@@ -115,4 +161,3 @@ if __name__ == "__main__":
     out = pl3.pooling(out)
     print(out.shape)
 
-# hello world
