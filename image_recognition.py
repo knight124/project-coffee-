@@ -80,9 +80,12 @@ class Softmax:
         input_len, nodes = self.weights.shape
 
         totals = np.dot(input, self.weights) + self.biases
+
         self.last_total = totals
         exp = np.exp(totals)
+
         return exp / np.sum(exp, axis=0)
+
     def backprop(self, gradloss, lr):
         for i, gradient in enumerate(gradloss):
             if gradient == 0:
@@ -90,19 +93,19 @@ class Softmax:
             t_exp = np.exp(self.last_total)
             Sum = np.sum(t_exp)
 
-            gradout = -t_exp*t_exp/(Sum**2)
-            gradout[i]=t_exp[i]*(Sum-t_exp[i])/(Sum**2)
+            gradout = -t_exp * t_exp / (Sum ** 2)
+            gradout[i] = t_exp[i] * (Sum - t_exp[i]) / (Sum ** 2)
 
             gradw = self.last_in
             gradb = 1
             gradin = self.weights
-            gradl = gradient *gradout
-            gradw = gradw[np.newaxis].T@ gradl[np.newaxis]
-            gradb =gradl*gradb
-            gradin = gradin @gradl
+            gradl = gradient * gradout
+            gradw = gradw[np.newaxis].T @ gradl[np.newaxis]
+            gradb = gradl * gradb
+            gradin = gradin @ gradl
 
-            self.weights -= lr*gradw
-            self.biases -= lr *gradb
+            self.weights -= lr * gradw
+            self.biases -= lr * gradb
 
             return gradin.reshape(self.lastinshape)
 
@@ -182,19 +185,23 @@ def forward(image, label):
     out = pl2.pooling(out)
     out = hl3.forward(out)
     out = pl3.pooling(out)
+
     out = softmax.forward(out)
+
     loss = -np.log(out[label])
     acc = 1 if np.argmax(out) == label else 0
 
     return out, loss, acc
 
-def train (im, lable, lr = 0.005):
-    out, l, acc = forward(im,lable)
+
+def train(im, lable, lr=0.005):
+    out, l, acc = forward(im, lable)
 
     gradient = np.zeros(10)
-    gradient[lable]= -1/out[lable]
-    gradient = softmax.backprop(gradient,lr)
-    return l,acc
+    gradient[lable] = -1 / out[lable]
+    gradient = softmax.backprop(gradient, lr)
+    return l, acc
+
 
 if __name__ == "__main__":
     addresstraining = 'train-images-idx3-ubyte.gz'
@@ -208,15 +215,15 @@ if __name__ == "__main__":
 
     hl1 = convolve(3, 8, 1)  # 28x28x1 ->26x26x8
     pl1 = pool(5)  # 26x26x8 -> 22x22x8
-    hl2 = convolve(3, 16, 0)  # 22x22x8 -> 20X20X128
+    hl2 = convolve(3, 8, 0)  # 22x22x8 -> 20X20X64
     pl2 = pool(3)  # 20x20x128 -> 18x18x 128
     hl3 = convolve(5, 8, 0)  # 18x18x128 -> 14x14x1024
-    pl3 = pool(14)  # 14x14x1024 ->1x1x1024
-    softmax = Softmax(1024, 10)
+    pl3 = pool(11)  # 14x14x1024 ->4x4x1024
+    softmax = Softmax(512*4*4, 10)
 
 for i in range(numimages):
-    #print(training_data[i], lable_data[i])
-    l,acc = train(training_data[i], lable_data[i])
+    # print(training_data[i], lable_data[i])
+    l, acc = train(training_data[i], lable_data[i])
     loss += l
     num_correct += acc
 
