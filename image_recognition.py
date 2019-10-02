@@ -7,63 +7,85 @@ import matplotlib.pyplot as plt
 
 def loadData(address, numimages, sizeImages):
     f = gzip.open(address, 'r')
+    l = gzip.open('train-labels-idx1-ubyte.gz', 'r')
     images = []
+    lables = []
+    l.read(8)
     f.read(16)
     buf = f.read(numimages * sizeImages * sizeimages)
     data = np.frombuffer(buf, dtype=np.uint8).astype(np.float32)
 
     data = data.reshape(numimages, sizeImages, sizeImages, 1)
-
+    for i in range(0, numimages):
+        buf = l.read(1)
+        lables.append(np.frombuffer(buf, dtype=np.uint8).astype(np.int64))
     for x in data:
         images.append(np.asarray(x).squeeze())
 
-    return images
-
-class NN:
-    def __init__(self,num_inputs):
-        self. numberofinputs = num_inputs
-        self.num_hidden = 20
-        self.num_hidden1 = 10
-        self.num_out = 10
-
-        self.weights1 = np.random.rand (self.numberofinputs,self.num_hidden)
-        self.weights2 = np.random.rand(self.num_hidden, self.num_hidden1)
-        self.weights3 = np.random.rand(self.num_hidden1,self.num_out)
-
-    def sig (self,x):
-        return 1/(1+np.exp(-x))
-
-    def divsig (self, x):
-        return x * (1-x)
-
-    def forward (self, x):
-        self.intermidiat  = np.dot(x,self.weights1)
-        self.intermidiat2 = self.sig(self.intermidiat)
-        self.intermidiat3 = np.dot(self.intermidiat2, self.weights2)
-        self.intermidiat4 = self.sig(self.intermidiat3)
-        self.intermidiat5 = np.dot(self.intermidiat4, self.weights3)
-        out = self.sig(self.intermidiat5)
-
-    def backward (self, x, y, o):
-        self.output_error = y-o
-        self.output_delta = self.o_error*self.divsig(o)
-
-        self.inermidiate4_error = self.output_delta.dot(self.weights3)
-        self.intermidiat4_delta = self.inermidiate4_error*self.divsig(self.intermidiat4)
-
-        self.intermidiat2.error = self.intermidiat4_delta(self.weights2.T)
-        self.intermidiat2_delta = self.inermidiate2_error*self.divsig(self.intermidiat4)
-
-        self.weights1 += x.T.dot(self.intermidiat2_delta)
-        self.weights2 += self.intermidiat4.T.dot(self.intermidiat4_delta)
-        self.weights3 += self.intermidiat2.T.dot(self.intermidiat2_delta)
+    return images, lables
 
 
+# class NN:
+#     def __init__(self,num_inputs):
+#         self. numberofinputs = num_inputs
+#         self.num_hidden = 20
+#         self.num_hidden1 = 10
+#         self.num_out = 10
+#
+#         self.weights1 = np.random.rand (self.numberofinputs,self.num_hidden)
+#         self.weights2 = np.random.rand(self.num_hidden, self.num_hidden1)
+#         self.weights3 = np.random.rand(self.num_hidden1,self.num_out)
+#
+#     def sig (self,x):
+#         return 1/(1+np.exp(-x))
+#
+#     def divsig (self, x):
+#         return x * (1-x)
+#
+#     def forward (self, x):
+#         self.intermidiat  = np.dot(x,self.weights1)
+#         self.intermidiat2 = self.sig(self.intermidiat)
+#         self.intermidiat3 = np.dot(self.intermidiat2, self.weights2)
+#         self.intermidiat4 = self.sig(self.intermidiat3)
+#         self.intermidiat5 = np.dot(self.intermidiat4, self.weights3)
+#         out = self.sig(self.intermidiat5)
+#
+#     def backward (self, x, y, o):
+#         self.output_error = y-o
+#         self.output_delta = self.o_error*self.divsig(o)
+#
+#         self.inermidiate4_error = self.output_delta.dot(self.weights3)
+#         self.intermidiat4_delta = self.inermidiate4_error*self.divsig(self.intermidiat4)
+#
+#         self.intermidiat2.error = self.intermidiat4_delta(self.weights2.T)
+#         self.intermidiat2_delta = self.inermidiate2_error*self.divsig(self.intermidiat4)
+#
+#         self.weights1 += x.T.dot(self.intermidiat2_delta)
+#         self.weights2 += self.intermidiat4.T.dot(self.intermidiat4_delta)
+#         self.weights3 += self.intermidiat2.T.dot(self.intermidiat2_delta)
 
+
+class Softmax:
+    # A standard fully-connected layer with softmax activation.
+
+    def __init__(self, input_len, nodes):
+        # We divide by input_len to reduce the variance of our initial values
+        self.weights = np.random.randn(input_len, nodes) / input_len
+        self.biases = np.zeros(nodes)
+
+    def forward(self, input):
+        
+        input = input.flatten()
+
+        input_len, nodes = self.weights.shape
+
+        totals = np.dot(input, self.weights) + self.biases
+        exp = np.exp(totals)
+        return exp / np.sum(exp, axis=0)
 
 
 class convolve:
-    #TODO add back propagation to the convelution layer
+
     def __init__(self, size, num_filters, isinput):
         self.num_filters = num_filters
         self.size = size
@@ -128,9 +150,20 @@ class pool:
 
         return out
 
-def train(X, Y):
-    print(X)
-    #TODO: add a training mechanism
+
+def forward(image, label):
+    out = hl1.forward((image / 255) - 0.5)
+    out = pl1.pooling(out)
+    # print(out.shape)
+    out = hl2.forward(out)
+    out = pl2.pooling(out)
+    out = hl3.forward(out)
+    out = pl3.pooling(out)
+    out = softmax.forward(out)
+    loss = -np.log(out[label])
+    acc = 1 if np.argmax(out) == label else 0
+
+    return out, loss, acc
 
 
 if __name__ == "__main__":
@@ -138,26 +171,26 @@ if __name__ == "__main__":
     addresslables = 'train-labels-idx1-ubyte.gz'
     numimages = 60000
     sizeimages = 28
+    loss = 0
+    num_correct = 0
 
-    training_data = np.asarray(loadData(addresstraining, numimages, sizeimages))
+    training_data, lable_data = np.asarray(loadData(addresstraining, numimages, sizeimages))
 
-    hl1 = convolve(3, 8, 1)
-    pl1 = pool(5)
-    hl2 = convolve(3, 16, 0)
-    pl2 = pool(3)
-    hl3 = convolve(5, 8, 0)
+    hl1 = convolve(3, 8, 1)  # 28x28x1 ->26x26x8
+    pl1 = pool(5)  # 26x26x8 -> 22x22x8
+    hl2 = convolve(3, 16, 0)  # 22x22x8 -> 20X20X128
+    pl2 = pool(3)  # 20x20x128 -> 18x18x 128
+    hl3 = convolve(5, 8, 0)  # 18x18x128 -> 14x14x1024
+    pl3 = pool(14)  # 14x14x1024 ->1x1x1024
+    softmax = Softmax(1024, 10)
 
-    out = hl1.forward(training_data[0])
+for i in range(numimages):
+    #print(training_data[i], lable_data[i])
+    _, l, acc = forward(training_data[i], lable_data[i])
+    loss += l
+    num_correct += acc
 
-    out = pl1.pooling(out)
-    # print(out.shape)
-    out = hl2.forward(out)
-    print(out.shape)
-    out = pl2.pooling(out)
-
-    out = hl3.forward(out)
-
-    pl3 = pool(out.shape[1])
-    out = pl3.pooling(out)
-    print(out.shape)
-
+    if i % 100 == 99:
+        print('[Step%d] past 100 step: Average Loss %.3f | Accuracy %d%%' % (i + 1, loss / 100, num_correct))
+        loss = 0
+        num_correct = 0
