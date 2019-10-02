@@ -74,14 +74,37 @@ class Softmax:
         self.biases = np.zeros(nodes)
 
     def forward(self, input):
-        
+        self.lastinshape = input.shape
         input = input.flatten()
-
+        self.last_in = input
         input_len, nodes = self.weights.shape
 
         totals = np.dot(input, self.weights) + self.biases
+        self.last_total = totals
         exp = np.exp(totals)
         return exp / np.sum(exp, axis=0)
+    def backprop(self, gradloss, lr):
+        for i, gradient in enumerate(gradloss):
+            if gradient == 0:
+                continue
+            t_exp = np.exp(self.last_total)
+            Sum = np.sum(t_exp)
+
+            gradout = -t_exp*t_exp/(Sum**2)
+            gradout[i]=t_exp[i]*(Sum-t_exp[i])/(Sum**2)
+
+            gradw = self.last_in
+            gradb = 1
+            gradin = self.weights
+            gradl = gradient *gradout
+            gradw = gradw[np.newaxis].T@ gradl[np.newaxis]
+            gradb =gradl*gradb
+            gradin = gradin @gradl
+
+            self.weights -= lr*gradw
+            self.biases -= lr *gradb
+
+            return gradin.reshape(self.lastinshape)
 
 
 class convolve:
@@ -165,6 +188,13 @@ def forward(image, label):
 
     return out, loss, acc
 
+def train (im, lable, lr = 0.005):
+    out, l, acc = forward(im,lable)
+
+    gradient = np.zeros(10)
+    gradient[lable]= -1/out[lable]
+    gradient = softmax.backprop(gradient,lr)
+    return l,acc
 
 if __name__ == "__main__":
     addresstraining = 'train-images-idx3-ubyte.gz'
@@ -186,7 +216,7 @@ if __name__ == "__main__":
 
 for i in range(numimages):
     #print(training_data[i], lable_data[i])
-    _, l, acc = forward(training_data[i], lable_data[i])
+    l,acc = train(training_data[i], lable_data[i])
     loss += l
     num_correct += acc
 
