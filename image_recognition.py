@@ -93,7 +93,7 @@ class Softmax:
             t_exp = np.exp(self.last_total)
             Sum = np.sum(t_exp)
 
-            gradout = -t_exp * t_exp / (Sum ** 2)
+            gradout = -t_exp[i] * t_exp / (Sum ** 2)
             gradout[i] = t_exp[i] * (Sum - t_exp[i]) / (Sum ** 2)
 
             gradw = self.last_in
@@ -178,15 +178,22 @@ class pool:
 
 
 def forward(image, label):
-    out = hl1.forward((image / 255) - 0.5)
+    out = hl1.forward(image/255 -0.5 )
+    # image123 = np.asarray(out[0]).squeeze()
+    # plt.imshow(image123)
+    # plt.show()
     out = pl1.pooling(out)
+    # image123 = np.asarray(out[0]).squeeze()
+    # plt.imshow(image123)
+    # plt.show()
     # print(out.shape)
-    out = hl2.forward(out)
-    out = pl2.pooling(out)
-    out = hl3.forward(out)
-    out = pl3.pooling(out)
+    # out = hl2.forward(out)
+    # out = pl2.pooling(out)
+    # out = hl3.forward(out)
+    # out = pl3.pooling(out)
 
     out = softmax.forward(out)
+   # print (out)
 
     loss = -np.log(out[label])
     acc = 1 if np.argmax(out) == label else 0
@@ -214,12 +221,12 @@ if __name__ == "__main__":
     training_data, lable_data = np.asarray(loadData(addresstraining, numimages, sizeimages))
 
     hl1 = convolve(3, 8, 1)  # 28x28x1 ->26x26x8
-    pl1 = pool(5)  # 26x26x8 -> 22x22x8
+    pl1 = pool(14)  # 26x26x8 -> 22x22x8
     hl2 = convolve(3, 8, 0)  # 22x22x8 -> 20X20X64
     pl2 = pool(3)  # 20x20x128 -> 18x18x 128
     hl3 = convolve(5, 8, 0)  # 18x18x128 -> 14x14x1024
     pl3 = pool(11)  # 14x14x1024 ->4x4x1024
-    softmax = Softmax(512*4*4, 10)
+    softmax = Softmax(13*13*8, 10)
 
 for i in range(numimages):
     # print(training_data[i], lable_data[i])
